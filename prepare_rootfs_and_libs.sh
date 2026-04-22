@@ -54,3 +54,41 @@ podman run --rm -it \
 		zip -r -y -9 /out/app/libs/x86.jar lib
 	'
 
+podman run --rm -it \
+	--arch armhf \
+	-v './:/out' \
+	debian:bookworm \
+	bash -c '
+		set -xe
+		apt update; apt install -y nextcloud-desktop-cmd busybox-static ca-certificates zip
+
+		mkdir -p /package/dev
+		mkdir -p /package/proc
+		mkdir -p /package/sys
+		mkdir -p /package/tmp
+		mkdir -p /package/run
+		cp -a etc usr var /package/
+		ln -s usr/lib /package/lib
+		cd /package/
+		rm -f /out/app/src/main/assets/armhf.tar
+		tar -cf /out/app/src/main/assets/armhf.tar .
+
+		cd /
+		rm -r /package
+
+		mkdir -p /package/lib/armeabi-v7a
+		mkdir -p /package/lib/arm64-v8a
+
+		cp /out/termux_proot_prebuilt/arm/data/data/com.termux/files/usr/bin/proot package/lib/armeabi-v7a
+		cp /out/termux_proot_prebuilt/arm/data/data/com.termux/files/usr/libexec/proot/loader package/lib/armeabi-v7a
+		cp /out/termux_proot_prebuilt/arm/data/data/com.termux/files/usr/lib/libtalloc.so.2.4.3 package/lib/armeabi-v7a/libtalloc.so.2
+		cp /usr/bin/busybox package/lib/armeabi-v7a
+		cp /out/termux_proot_prebuilt/aarch64/data/data/com.termux/files/usr/bin/proot package/lib/arm64-v8a
+		cp /out/termux_proot_prebuilt/aarch64/data/data/com.termux/files/usr/libexec/proot/loader package/lib/arm64-v8a
+		cp /out/termux_proot_prebuilt/aarch64/data/data/com.termux/files/usr/libexec/proot/loader32 package/lib/arm64-v8a
+		cp /out/termux_proot_prebuilt/aarch64/data/data/com.termux/files/usr/lib/libtalloc.so.2.4.3 package/lib/arm64-v8a/libtalloc.so.2
+
+		cd /package
+		rm -f /out/app/libs/arm.jar
+		zip -r -y -9 /out/app/libs/arm.jar lib
+	'

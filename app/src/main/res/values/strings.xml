@@ -6,4 +6,6 @@
     <string name="sync_button_text">SYNC</string>
     <string name="remove_button_text">Remove</string>
     <string name="add_subfolder_button_text">ADD SUBFOLDER</string>
+    <string name="stop_button_text">STOP</string>
+    <string name="refresh_rootfs_button_text">REFRESH ROOTFS</string>
 </resources>

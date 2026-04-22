@@ -106,6 +106,19 @@
                         android:layout_weight="1"
                         android:text="@string/sync_button_text" />
                 </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:padding="4dp">
+
+                    <Button
+                        android:id="@+id/refresh_rootfs"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/refresh_rootfs_button_text" />
+                </LinearLayout>
 
             </LinearLayout>
         </ScrollView>

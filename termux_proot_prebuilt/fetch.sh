@@ -5,22 +5,22 @@ script_dir="$(realpath $script_dir)"
 base_url="https://packages.termux.dev/apt/apt/termux-main/pool/main/p/proot/"
 package_prefix=proot_5.1.107-70_
 
+base_url_talloc="https://packages.termux.dev/apt/apt/termux-main/pool/main/libt/libtalloc/"
+package_prefix_talloc=libtalloc_2.4.3_
+
 cd $script_dir
-rm *.deb
-
-
-wget https://packages.termux.dev/apt/apt/termux-main/pool/main/p/proot/proot_5.1.107-70_x86_64.deb
-wget https://packages.termux.dev/apt/apt/termux-main/pool/main/p/proot/proot_5.1.107-70_i686.deb
-wget https://packages.termux.dev/apt/apt/termux-main/pool/main/p/proot/proot_5.1.107-70_arm.deb
-wget https://packages.termux.dev/apt/apt/termux-main/pool/main/p/proot/proot_5.1.107-70_aarch64.deb
+rm -f *.deb
 
 for arch in x86_64 i686 arm aarch64
 do
-	wget "${base_dir}${package_prefix}${arch}.deb"
 	cd "$script_dir"
+	wget "${base_url}${package_prefix}${arch}.deb"
+	wget "${base_url_talloc}${package_prefix_talloc}${arch}.deb"
 	rm -rf $arch
 	mkdir $arch
 	cd $arch
 	ar xv "../${package_prefix}${arch}.deb"
+	tar -xf data.tar.xz
+	ar xv "../${package_prefix_talloc}${arch}.deb"
 	tar -xf data.tar.xz
 done
