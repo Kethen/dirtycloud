@@ -22,13 +22,15 @@ public class Sync extends AppCompatActivity {
     ScrollView cli_scroller;
     Thread sync_thread;
     boolean stop_thread;
-    boolean thread_stopped;
-
+    Process process;
     Button stop_button;
 
     void stop_sync(){
         if (sync_thread != null && sync_thread.isAlive()){
             stop_thread = true;
+            if (process != null){
+                process.destroy();
+            }
             stop_button.setEnabled(false);
             new Thread(new Runnable() {
                 @Override
@@ -179,7 +181,7 @@ public class Sync extends AppCompatActivity {
                     */
 
                     try {
-                        Process process = Runtime.getRuntime().exec(cmd.toArray(new String[0]), env.toArray(new String[0]), getFilesDir());
+                        process = Runtime.getRuntime().exec(cmd.toArray(new String[0]), env.toArray(new String[0]), getFilesDir());
                         InputStream input_stream = process.getInputStream();
                         InputStream error_stream = process.getErrorStream();
                         while(true){
@@ -225,8 +227,8 @@ public class Sync extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
+    protected void onDestroy() {
         stop_sync();
+        super.onDestroy();
     }
 }
