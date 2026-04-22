@@ -194,6 +194,7 @@ public class Sync extends AppCompatActivity {
                             for(InputStream stream : new InputStream[]{input_stream, error_stream}) {
                                 byte[] buf = new byte[2049];
                                 if (stream.available() == 0){
+                                    Thread.sleep(100);
                                     continue;
                                 }
                                 int read_result = stream.read(buf, 0, buf.length - 1);
