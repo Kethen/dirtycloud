@@ -1,0 +1,3 @@
+[submodule "build-proot-android"]
+	path = build-proot-android
+	url = https://github.com/green-green-avk/build-proot-android.git

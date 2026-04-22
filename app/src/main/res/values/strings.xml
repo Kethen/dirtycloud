@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Dirty Cloud</string>
+    <string name="server_address_hint">https://nextcloud.com/</string>
+    <string name="user_name_hint">username</string>
+    <string name="app_password_hint">app password</string>
+    <string name="sync_button_text">SYNC</string>
+    <string name="remove_button_text">Remove</string>
+    <string name="add_subfolder_button_text">ADD SUBFOLDER</string>
+</resources>
