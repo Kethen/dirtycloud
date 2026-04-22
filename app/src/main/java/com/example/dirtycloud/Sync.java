@@ -169,12 +169,14 @@ public class Sync extends AppCompatActivity {
                     cmd.add(nextcloud_subdir);
                     cmd.add(server_name);
 
+                    /*
                     for(String e : env){
                         System.out.println(e);
                     }
                     for(String c : cmd){
                         System.out.println(c);
                     }
+                    */
 
                     try {
                         Process process = Runtime.getRuntime().exec(cmd.toArray(new String[0]), env.toArray(new String[0]), getFilesDir());
