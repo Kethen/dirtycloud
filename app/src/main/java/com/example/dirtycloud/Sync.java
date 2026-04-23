@@ -1,8 +1,15 @@
 package com.example.dirtycloud;
 
+import static android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION;
+
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,10 +56,11 @@ public class Sync extends AppCompatActivity {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    while (sync_thread.isAlive()) {
+                    while (sync_thread != null && sync_thread.isAlive()) {
                         try {
                             sync_thread.join();
                         }catch(Exception e){
+                            System.out.print(String.format("thread join exception %s\n", e.toString()));
                         }
                     }
                     stop_button.post(new Runnable() {
@@ -147,7 +155,8 @@ public class Sync extends AppCompatActivity {
         String external_dir = getExternalFilesDir(null).toString();
         String files_dir = getFilesDir().toString();
         String rootfs_dir = String.format("%s/rootfs", files_dir);
-        String nextcloud_dir = String.format("%s/Nextcloud", external_dir);
+        String nextcloud_dir = String.format("/sdcard/DirtyCloud", external_dir);
+        String sync_log_path = String.format("%s/sync_log.txt", nextcloud_dir);
 
         stop_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -182,7 +191,18 @@ public class Sync extends AppCompatActivity {
             return;
         }
 
-        String sync_log_path = String.format("%s/sync_log.txt", nextcloud_dir);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if(!Environment.isExternalStorageManager()){
+                String package_name = getApplicationContext().getPackageName();
+                Intent settings_intent = new Intent();
+                settings_intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                settings_intent.addCategory("android.intent.category.DEFAULT");
+                settings_intent.setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
+                startActivity(settings_intent);
+                finish();
+            }
+        }
+
         try {
             Runtime.getRuntime().exec(String.format("mkdir -p %s", nextcloud_dir)).waitFor();
             sync_log_ostream = new BufferedOutputStream(new FileOutputStream(new File(sync_log_path), false), 4096);
@@ -309,6 +329,12 @@ public class Sync extends AppCompatActivity {
                 }catch(Exception e){
 
                 }
+                stop_button.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        stop_button.setEnabled(false);
+                    }
+                });
             }
         });
         stop_thread = false;

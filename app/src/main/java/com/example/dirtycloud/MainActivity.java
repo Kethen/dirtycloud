@@ -5,10 +5,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -195,6 +197,16 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
                     path_list.set(position, path.getText().toString());
+                }
+            });
+            path.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                @Override
+                public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                    if (position >= path_list.size()){
+                        return false;
+                    }
+                    path_list.set(position, path.getText().toString());
+                    return false;
                 }
             });
             if (position < path_list.size()) {
