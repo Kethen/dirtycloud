@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,7 +14,12 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -32,6 +36,8 @@ public class Sync extends AppCompatActivity {
     ArrayList<String> cli_output_lines;
 
     RecyclerView cli_output_line_list;
+
+    OutputStream sync_log_ostream;
 
     void stop_sync(){
         if (sync_thread != null && sync_thread.isAlive()){
@@ -53,7 +59,9 @@ public class Sync extends AppCompatActivity {
                         @Override
                         public void run() {
                             stop_button.setEnabled(true);
+                            finish();
                         }
+
                     });
                 }
             }).start();
@@ -62,18 +70,26 @@ public class Sync extends AppCompatActivity {
 
     void log(String msg){
         System.out.print(msg);
+        String[] lines = msg.split("\n");
         cli_output_line_list.post(new Runnable() {
             @Override
             public void run() {
-                for(String line : msg.split("\n")){
+                for(String line : lines){
                     cli_output_lines.add(line);
                 }
                 cli_output_line_list.getAdapter().notifyDataSetChanged();
                 cli_output_line_list.scrollBy(0, 65535);
-
-                System.out.print(msg);
             }
         });
+    }
+
+    void log_sync(String msg){
+        System.out.print(msg);
+        try {
+            sync_log_ostream.write(msg.getBytes(Charset.forName("UTF-8")));
+        }catch(Exception e){
+            System.out.print(String.format("failed writing log message, %s", e.toString()));
+        }
     }
 
     public static class CliOutputLine extends RecyclerView.ViewHolder {
@@ -166,6 +182,16 @@ public class Sync extends AppCompatActivity {
             return;
         }
 
+        String sync_log_path = String.format("%s/sync_log.txt", nextcloud_dir);
+        try {
+            Runtime.getRuntime().exec(String.format("mkdir -p %s", nextcloud_dir)).waitFor();
+            sync_log_ostream = new BufferedOutputStream(new FileOutputStream(new File(sync_log_path), false), 4096);
+        }catch(Exception e){
+            log(String.format("failed creating nextcloud dir and log file, %s\n", e.toString()));
+            return;
+        }
+        log(String.format("sync begin, log can be found at %s\n", sync_log_path));
+
         sync_thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -227,6 +253,10 @@ public class Sync extends AppCompatActivity {
                     }
                     */
 
+                    String begin_message = String.format("begin sync of %s\n", path);
+                    log(begin_message);
+                    log_sync(begin_message);
+
                     try {
                         process = Runtime.getRuntime().exec(cmd.toArray(new String[0]), env.toArray(new String[0]), getFilesDir());
                         InputStream input_stream = process.getInputStream();
@@ -250,7 +280,7 @@ public class Sync extends AppCompatActivity {
                                 if (read_result == -1) {
                                     continue;
                                 }
-                                log(new String(buf, 0, read_result));
+                                log_sync(new String(buf, 0, read_result));
                             }
                             if (stop_thread){
                                 process.destroy();
@@ -261,11 +291,23 @@ public class Sync extends AppCompatActivity {
                             }
                         }
                         process.waitFor();
-                        log(String.format("process finished with %d\n", process.exitValue()));
+                        String finish_message = String.format("sync of %s finished with %d\n", path, process.exitValue());
+                        log_sync(finish_message);
+                        log(finish_message);
                     }catch(Exception e){
+                        String error_message = String.format("sync of %s failed, %s", path, e.toString());
+                        log_sync(error_message);
                         log(String.format("sync process failed, %s\n", e.toString()));
                         break;
                     }
+                }
+                String end_message = String.format("sync finished\n");
+                log_sync(end_message);
+                log(end_message);
+                try{
+                    sync_log_ostream.flush();
+                }catch(Exception e){
+
                 }
             }
         });
