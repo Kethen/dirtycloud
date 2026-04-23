@@ -1,7 +1,5 @@
 package com.example.dirtycloud;
 
-import static android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION;
-
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,6 +19,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -215,7 +215,9 @@ public class Sync extends AppCompatActivity {
         sync_thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                long begin_ms = (new Date()).getTime();
                 for(String path : subfolder_set) {
+                    long path_begin_ms = (new Date()).getTime();
                     if (stop_thread){
                         log("sync stopped\n");
                         break;
@@ -279,8 +281,8 @@ public class Sync extends AppCompatActivity {
 
                     try {
                         process = Runtime.getRuntime().exec(cmd.toArray(new String[0]), env.toArray(new String[0]), getFilesDir());
-                        InputStream input_stream = process.getInputStream();
-                        InputStream error_stream = process.getErrorStream();
+                        InputStream input_stream = new BufferedInputStream(process.getInputStream(), 4096);
+                        InputStream error_stream = new BufferedInputStream(process.getErrorStream(), 4096);
                         while(true){
                             boolean process_done = false;
                             try{
@@ -291,16 +293,15 @@ public class Sync extends AppCompatActivity {
                             }
 
                             for(InputStream stream : new InputStream[]{input_stream, error_stream}) {
-                                byte[] buf = new byte[2049];
-                                if (stream.available() == 0){
-                                    Thread.sleep(100);
-                                    continue;
+                                while(stream.available() != 0) {
+                                    byte[] buf = new byte[2049];
+                                    int read_result = stream.read(buf, 0, buf.length - 1);
+                                    if (read_result == -1) {
+                                        break;
+                                    }
+                                    log_sync(new String(buf, 0, read_result));
                                 }
-                                int read_result = stream.read(buf, 0, buf.length - 1);
-                                if (read_result == -1) {
-                                    continue;
-                                }
-                                log_sync(new String(buf, 0, read_result));
+                                Thread.sleep(100);
                             }
                             if (stop_thread){
                                 process.destroy();
@@ -311,17 +312,19 @@ public class Sync extends AppCompatActivity {
                             }
                         }
                         process.waitFor();
-                        String finish_message = String.format("sync of %s finished with %d\n", path, process.exitValue());
+                        long path_time_spent_ms = (new Date()).getTime() - path_begin_ms;
+                        String finish_message = String.format("sync of %s finished with %d, took %d ms\n", path, process.exitValue(), path_time_spent_ms);
                         log_sync(finish_message);
                         log(finish_message);
                     }catch(Exception e){
                         String error_message = String.format("sync of %s failed, %s", path, e.toString());
                         log_sync(error_message);
-                        log(String.format("sync process failed, %s\n", e.toString()));
+                        log(error_message);
                         break;
                     }
                 }
-                String end_message = String.format("sync finished\n");
+                long time_spent_ms = (new Date()).getTime() - begin_ms;
+                String end_message = String.format("sync finished, took %d ms\n", time_spent_ms);
                 log_sync(end_message);
                 log(end_message);
                 try{
