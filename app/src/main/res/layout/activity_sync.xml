@@ -33,19 +33,14 @@
                 android:text="@string/stop_button_text" />
         </LinearLayout>
 
-        <ScrollView
-            android:id="@+id/cli_scroller"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/cli_output_line_list"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <TextView
-                android:id="@+id/cli_output"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="none"
-                android:enabled="false"
-                android:scrollHorizontally="false" />
-        </ScrollView>
+            android:layout_height="match_parent"
+            android:fadeScrollbars="false"
+            android:scrollbarAlwaysDrawHorizontalTrack="false"
+            android:scrollbarAlwaysDrawVerticalTrack="true"
+            android:scrollbars="vertical" />
 
     </LinearLayout>
 

@@ -3,27 +3,35 @@ package com.example.dirtycloud;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
 public class Sync extends AppCompatActivity {
     Toolbar toolbar;
-    TextView cli_output;
-    ScrollView cli_scroller;
+
     Thread sync_thread;
     boolean stop_thread;
     Process process;
     Button stop_button;
+
+    ArrayList<String> cli_output_lines;
+
+    RecyclerView cli_output_line_list;
 
     void stop_sync(){
         if (sync_thread != null && sync_thread.isAlive()){
@@ -54,19 +62,55 @@ public class Sync extends AppCompatActivity {
 
     void log(String msg){
         System.out.print(msg);
-        cli_output.post(new Runnable() {
+        cli_output_line_list.post(new Runnable() {
             @Override
             public void run() {
-                cli_output.append(msg);
-                cli_scroller.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        cli_scroller.scrollBy(0,65535);
-                    }
-                });
+                for(String line : msg.split("\n")){
+                    cli_output_lines.add(line);
+                }
+                cli_output_line_list.getAdapter().notifyDataSetChanged();
+                cli_output_line_list.scrollBy(0, 65535);
+
                 System.out.print(msg);
             }
         });
+    }
+
+    public static class CliOutputLine extends RecyclerView.ViewHolder {
+        TextView text;
+
+        public CliOutputLine(View view){
+            super(view);
+            text = view.findViewById(R.id.console_output_line_text);
+        }
+
+        public void set_text(String t){
+            text.setText(t);
+        }
+    }
+
+    public static class CliOutputLineListAdapter extends RecyclerView.Adapter<CliOutputLine>{
+        private ArrayList<String> console_output_lines;
+
+        public CliOutputLineListAdapter(ArrayList<String> l){
+            console_output_lines = l;
+        }
+
+        @Override
+        public CliOutputLine onCreateViewHolder(ViewGroup viewGroup, int viewType) {
+            View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.console_output_line, viewGroup, false);
+            return new CliOutputLine(view);
+        }
+
+        @Override
+        public void onBindViewHolder(CliOutputLine line, final int position) {
+            line.set_text(console_output_lines.get(position));
+        }
+
+        @Override
+        public int getItemCount() {
+            return console_output_lines.size();
+        }
     }
 
     @Override
@@ -75,9 +119,8 @@ public class Sync extends AppCompatActivity {
         setContentView(R.layout.activity_sync);
 
         toolbar = findViewById(R.id.toolbar_sync);
-        cli_output = findViewById(R.id.cli_output);
-        cli_scroller = findViewById(R.id.cli_scroller);
         stop_button = findViewById(R.id.stop_button);
+        cli_output_line_list = findViewById(R.id.cli_output_line_list);
 
         SharedPreferences global = getSharedPreferences("global", Context.MODE_PRIVATE);
         String server_name = global.getString("server_name", "");
@@ -96,6 +139,10 @@ public class Sync extends AppCompatActivity {
                 stop_sync();
             }
         });
+
+        cli_output_lines = new ArrayList<String>();
+        cli_output_line_list.setLayoutManager(new LinearLayoutManager(this));
+        cli_output_line_list.setAdapter(new CliOutputLineListAdapter(cli_output_lines));
 
         setSupportActionBar(toolbar);
 
