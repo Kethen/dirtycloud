@@ -3,7 +3,7 @@ set -xe
 podman run --rm -it \
 	--arch i386 \
 	-v './:/out' \
-	debian:bookworm \
+	debian:trixie \
 	bash -c '
 		set -xe
 		apt update; apt install -y nextcloud-desktop-cmd busybox-static ca-certificates zip
@@ -57,7 +57,7 @@ podman run --rm -it \
 podman run --rm -it \
 	--arch armhf \
 	-v './:/out' \
-	debian:bookworm \
+	debian:trixie \
 	bash -c '
 		set -xe
 		apt update; apt install -y nextcloud-desktop-cmd busybox-static ca-certificates zip
